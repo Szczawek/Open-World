@@ -11,7 +11,6 @@
 #include "InputAction.h"
 #include "Blueprint/UserWidget.h"
 #include <GameFramework/FloatingPawnMovement.h>
-#include "../../../../../Engine/Plugins/Experimental/ChaosVehiclesPlugin/Source/ChaosVehicles/Public/ChaosWheeledVehicleMovementComponent.h"
 #include "Car.generated.h"
 UCLASS()
 class NDS_API ACar : public APawn
@@ -32,9 +31,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Car Stats")
-    UChaosWheeledVehicleMovementComponent* VehicleMovement;
+    
+    UPROPERTY(EditAnywhere, Category = "Stats")
+    UFloatingPawnMovement* FloatingPawnMovement;
 
     UPROPERTY(EditAnywhere, Category = "Car")
     USkeletalMeshComponent* CarComponent;
@@ -74,8 +73,11 @@ public:
     UPROPERTY(EditAnywhere, Category = "Input")
     UInputAction* GasAction;
     
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    UPROPERTY(EditAnywhere, Category = "Input")
     UInputAction* BrakeAction;
+
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* HandBrakeAction;
 
     UPROPERTY(EditAnyWhere, Category = "Input")
     UInputAction* TurnWheelAction;
@@ -84,6 +86,7 @@ public:
 
     bool bIsCarMoving = false;
     bool bIsCarHasActiveBrake = false;
+    bool bIsCarReverseMoving = false;
 
     float ForwardMovementVector = 0.0f;
     float RightMovementVector = 0.0f;
@@ -93,14 +96,20 @@ public:
     void TurnWheel(const FInputActionValue& Value);
     void Lock(const FInputActionValue& Value);
 
-    void Brake();
-    void RelaseBrake();
-    //void SlowDownMovement(float Value) {
-    //    FloatingPawnMovement->MaxSpeed -= Value;
-    //}
-    //void HigherSpeed(float Value) {
-    //    FloatingPawnMovement->MaxSpeed += Value;
-    //}
+    void ReverseGear(const FInputActionValue& Value);
+    void RelaseReverseGear();
+
+    void HandBrake();
+    void RelaseHandBrake();
+
+    void SlowDownMovement(float Value) {
+        Speed -= Value;
+        FloatingPawnMovement->MaxSpeed -= Value;
+    }
+    void HigherSpeed(float Value) {
+        Speed += Value;
+        FloatingPawnMovement->MaxSpeed += Value;
+    }
 
     void SwitchViewMode();
 
