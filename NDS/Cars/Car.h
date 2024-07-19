@@ -82,14 +82,11 @@ public:
     UPROPERTY(EditAnyWhere, Category = "Input")
     UInputAction* TurnWheelAction;
 
- 
-
     bool bIsCarMoving = false;
-    bool bIsCarHasActiveBrake = false;
     bool bIsCarReverseMoving = false;
-
+    bool bIsCarHasActiveBrake = false;
+  
     float ForwardMovementVector = 0.0f;
-    float RightMovementVector = 0.0f;
 
     void MoveForward(const FInputActionValue& Value);
     void StopMoving();
@@ -111,19 +108,19 @@ public:
         FloatingPawnMovement->MaxSpeed += Value;
     }
 
-    void SwitchViewMode();
-
+    /// Car Stats
     float Rate = 5.0f;
     float Timmer = 0.0f;
-
     float Gear = 1;
     float NextGearSpeed = 200.f;
 
-
     UPROPERTY(BlueprintReadWrite, Category = "Stats")
-    float Speed = 08.0f;
+    float Speed = 0.0f;
+
     float MinSpeed = 0.0f;
     float MaxSpeed = 1800.0f;
+
+    void SwitchViewMode();
 
     UPROPERTY(EditAnywhere, Category = "Widget")
     TSubclassOf<UUserWidget> CarWidgetClass;

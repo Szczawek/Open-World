@@ -11,12 +11,12 @@ ACar::ACar()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
     BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Component"));
-    BoxComponent->SetSimulatePhysics(true);
-    RootComponent = BoxComponent;
     FloatingPawnMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Floating Movement"));
 
+    BoxComponent->SetSimulatePhysics(true);
     CarComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Car component"));
     CarComponent->SetupAttachment(BoxComponent);
+
     ThirdPersonSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Third Person Arm"));
     FirstPersonSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("FPS Spring Arm"));
     FrontSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Front Spring Arm"));
@@ -61,8 +61,6 @@ void ACar::Tick(float DeltaTime)
         const FRotator Rotation = Controller->GetControlRotation();
         const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
         const FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        const FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-        //AddMovementInput(RightVector, RightMovementVector);
         AddMovementInput(ForwardVector, ForwardMovementVector);
     }
 
@@ -107,7 +105,7 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 
 void ACar::MoveForward(const FInputActionValue& Value)
 {
-
+    if (bIsCarHasActiveBrake) return;
     if (Speed > 0.0f && !bIsCarMoving) {
         UE_LOG(LogTemp, Warning, TEXT("1"));
         if (Speed - 20.0f < 0.0f) {
@@ -115,7 +113,7 @@ void ACar::MoveForward(const FInputActionValue& Value)
             FloatingPawnMovement->MaxSpeed = 0.0f;
         }
         else {
-            SlowDownMovement(20);
+            SlowDownMovement(10.0f);
         }
         return;
     }
@@ -136,21 +134,33 @@ void ACar::StopMoving()
 
 void ACar::TurnWheel(const FInputActionValue& Value)
 {
-    //if (!bIsCarMoving && Speed <= 0.0f || !bIsCarReverseMoving && Speed <= 0.0f) return;
+    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Vector: %f"), ForwardMovementVector));
+    if (!bIsCarMoving && Speed <= 0.0f || !bIsCarReverseMoving && Speed <= 0.0f) return;
     const FVector2D MovementVector = Value.Get<FVector2D>();
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
-    const FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y) * 10.0f;
+    const FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
     AddMovementInput(RightVector, MovementVector.X);
+
     if (Speed <= 100.0f) return;
     FRotator CarRotation = GetActorRotation();
-    CarRotation.Yaw += MovementVector.X;
-    RightMovementVector = MovementVector.X;
+    float RateValue = GetWorld()->GetDeltaSeconds();
+    float RotateBy = MovementVector.X * RateValue * 10.f;
+
+    if (bIsCarReverseMoving || FMath::IsNegative(ForwardMovementVector)) {
+        RotateBy *= -1.0f;
+    }
+    AddControllerYawInput(RotateBy);
+
+    //Rotational force of the car
+    CarRotation.Yaw += RotateBy * 2.6f;
     SetActorRelativeRotation(CarRotation);
+
 }
 
 void ACar::ReverseGear(const FInputActionValue& Value)
 {
+    if (bIsCarHasActiveBrake) return;
     if (bIsCarMoving) bIsCarMoving = false;
     if (Speed > 0.0f && !bIsCarReverseMoving) {
         if (Speed - 20.0f < 0.0f) {
@@ -158,15 +168,17 @@ void ACar::ReverseGear(const FInputActionValue& Value)
             FloatingPawnMovement->MaxSpeed = 0.0f;
         }
         else {
-        SlowDownMovement(20);
+        SlowDownMovement(10.0f);
         }
         return;
     }
 
-    if (!bIsCarReverseMoving) {
-        bIsCarReverseMoving = true;
-        HigherSpeed(400.0f);
+    if (!bIsCarReverseMoving) bIsCarReverseMoving = true;
+
+    if (Speed <= 400.0f) {
+        HigherSpeed(20.0f);
     }
+
     const FVector2D MovementVector = Value.Get<FVector2D>();
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotator(0.0f, Rotation.Yaw, 0.0f);
@@ -183,14 +195,15 @@ void ACar::RelaseReverseGear()
 
 void ACar::HandBrake()
 {
-    if (!bIsCarHasActiveBrake) bIsCarHasActiveBrake = true;
+    if (bIsCarMoving) bIsCarMoving = false;
+    if (bIsCarReverseMoving) bIsCarReverseMoving = false;
     if (Speed > 0.0f) {
             if (Speed < 100.0f) {
                 FloatingPawnMovement->MaxSpeed = 0;
                 Speed = 0.0f;
                 return;
             } 
-            SlowDownMovement(100.0f);
+            SlowDownMovement(50.0f);
     }
 }
 
@@ -201,9 +214,10 @@ void ACar::RelaseHandBrake()
 
 void ACar::Lock(const FInputActionValue& Value)
 {
-    //const FVector2D MovementVector = Value.Get<FVector2D>();
-    //const FRotator Rotator(0.0f, MovementVector.Y, MovementVector.X);
-    //ThirdPersonSpringArm->SetRelativeRotation(Rotator);
+    const FVector2D MovementVector = Value.Get<FVector2D>();
+    FRotator ArmRotation = ThirdPersonSpringArm->GetRelativeRotation();
+    ArmRotation.Yaw += MovementVector.X;
+    ThirdPersonSpringArm->SetRelativeRotation(ArmRotation);
     //AddControllerYawInput(MovementVector.X);
     //AddControllerPitchInput(MovementVector.Y * -1);
 }
@@ -212,17 +226,17 @@ void ACar::Lock(const FInputActionValue& Value)
 void ACar::SwitchViewMode()
 {
     if (ThirdPersonCamera->IsActive()) {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("1"));
         ThirdPersonCamera->SetActive(false);
         FirstPersonCamera->SetActive(true);
+
     } else if(FirstPersonCamera->IsActive()) {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("2"));
         FirstPersonCamera->SetActive(false);
         FrontCamera->SetActive(true);
+
     } else if(FrontCamera->IsActive()) {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("3"));
         FrontCamera->SetActive(false);
         ThirdPersonCamera->SetActive(true);
+
     }
 }
 
