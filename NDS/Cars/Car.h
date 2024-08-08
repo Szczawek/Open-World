@@ -81,16 +81,24 @@ public:
 
     UPROPERTY(EditAnyWhere, Category = "Input")
     UInputAction* TurnWheelAction;
+    
 
+    //Car Logic
+    bool bHasFuel = true;
     bool bIsCarMoving = false;
     bool bIsCarReverseMoving = false;
     bool bIsCarHasActiveBrake = false;
   
-    float ForwardMovementVector = 0.0f;
+    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    float ForwardMovementValue = 0.0f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    float RightMovementValue = 0.0f;
 
     void MoveForward(const FInputActionValue& Value);
     void StopMoving();
     void TurnWheel(const FInputActionValue& Value);
+    void StopWheel();
     void Lock(const FInputActionValue& Value);
 
     void ReverseGear(const FInputActionValue& Value);
@@ -108,17 +116,25 @@ public:
         FloatingPawnMovement->MaxSpeed += Value;
     }
 
-    /// Car Stats
-    float Rate = 5.0f;
-    float Timmer = 0.0f;
-    float Gear = 1;
-    float NextGearSpeed = 200.f;
+    void ResetSpeed() {
+        Speed = 0.0f;
+        FloatingPawnMovement->MaxSpeed = 0.0f;
+    }
 
+    UFUNCTION()
+    void Colision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+
+    /// Car Stats
     UPROPERTY(BlueprintReadWrite, Category = "Stats")
     float Speed = 0.0f;
 
-    float MinSpeed = 0.0f;
+    UPROPERTY(EditAnywhere, Category = "Stats")
     float MaxSpeed = 1800.0f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    float Fuel = 1.0f;
+
+
 
     void SwitchViewMode();
 

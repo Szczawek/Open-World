@@ -33,6 +33,7 @@ ACar::ACar()
     FirstPersonSpringArm->SetupAttachment(CarComponent);
     FrontSpringArm->SetupAttachment(CarComponent);
     FloatingPawnMovement->MaxSpeed = 0.0f;
+
 }
 
 // Called when the game starts or when spawned
@@ -50,37 +51,26 @@ void ACar::BeginPlay()
         CarWidget = CreateWidget<UUserWidget>(GetWorld()->GetFirstPlayerController(), CarWidgetClass);
         CarWidget->AddToViewport();
     }
-	
+    if (BoxComponent) {
+        BoxComponent->OnComponentHit.AddDynamic(this, &ACar::Colision);
+    }
 }
 
 // Called every frame
 void ACar::Tick(float DeltaTime)
 {
-    Super::Tick(DeltaTime);;
-    if (!bIsCarMoving && Speed > MinSpeed && !bIsCarReverseMoving) {
+    Super::Tick(DeltaTime);
+
+    if (!bIsCarMoving && Speed > 0.0f && !bIsCarReverseMoving) {
+        SlowDownMovement(100.0f * DeltaTime);
         const FRotator Rotation = Controller->GetControlRotation();
         const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
-        const FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        AddMovementInput(ForwardVector, ForwardMovementVector);
-    }
+        FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+        FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        AddMovementInput(ForwardVector, ForwardMovementValue);
+}
 
-    if (!bIsCarMoving && Speed > MinSpeed && !bIsCarReverseMoving) {
-       /* if (Speed < NextGearSpeed) {
-            if (NextGearSpeed - Speed > 0.0f) {
-            NextGearSpeed -= Speed;
-            }
-            else {
-                NextGearSpeed = 0.0f;
-            }
-            Gear--;
-        }*/
-        SlowDownMovement(100.0f * DeltaTime);
-    }
     if (bIsCarMoving && Speed < MaxSpeed) {
-  /*      if (Speed > NextGearSpeed) {
-            Gear++;
-            NextGearSpeed += Speed;
-        }*/
         HigherSpeed(100.f * DeltaTime * 2);
     }
 }
@@ -97,6 +87,7 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
         EnhancedInputComponent->BindAction(HandBrakeAction, ETriggerEvent::Triggered, this, &ACar::HandBrake);
         EnhancedInputComponent->BindAction(HandBrakeAction, ETriggerEvent::Completed, this, &ACar::RelaseHandBrake);
         EnhancedInputComponent->BindAction(TurnWheelAction, ETriggerEvent::Triggered, this, &ACar::TurnWheel);
+        EnhancedInputComponent->BindAction(TurnWheelAction, ETriggerEvent::Completed, this, &ACar::StopWheel);
         EnhancedInputComponent->BindAction(LockAction, ETriggerEvent::Triggered, this, &ACar::Lock);
         EnhancedInputComponent->BindAction(ViewModeAction, ETriggerEvent::Triggered, this, &ACar::SwitchViewMode);
     }
@@ -105,26 +96,18 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 
 void ACar::MoveForward(const FInputActionValue& Value)
 {
-    if (bIsCarHasActiveBrake) return;
-    if (Speed > 0.0f && !bIsCarMoving) {
-        UE_LOG(LogTemp, Warning, TEXT("1"));
-        if (Speed - 20.0f < 0.0f) {
-            Speed = 0.0f;
-            FloatingPawnMovement->MaxSpeed = 0.0f;
-        }
-        else {
-            SlowDownMovement(10.0f);
-        }
-        return;
+    if (bIsCarHasActiveBrake || bIsCarReverseMoving || !bHasFuel) return;
+    if (Speed > 0.0f && !bIsCarMoving && !bIsCarReverseMoving) {
+        if (Speed - 20.0f < 0.0f) return ResetSpeed();
+            return SlowDownMovement(10.0f);        
     }
     if (!bIsCarMoving) bIsCarMoving = true;
-    UE_LOG(LogTemp, Warning, TEXT("2"));
     const FVector2D MovementVector = Value.Get<FVector2D>();
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
     const FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
     AddMovementInput(ForwardVector, MovementVector.Y);
-    ForwardMovementVector = MovementVector.Y;
+    ForwardMovementValue = MovementVector.Y;
 }
 
 void ACar::StopMoving()
@@ -134,49 +117,50 @@ void ACar::StopMoving()
 
 void ACar::TurnWheel(const FInputActionValue& Value)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Vector: %f"), ForwardMovementVector));
-    if (!bIsCarMoving && Speed <= 0.0f || !bIsCarReverseMoving && Speed <= 0.0f) return;
+    if (!bIsCarMoving && Speed <= 100.0f || !bIsCarReverseMoving && Speed <= 100.0f) return;
     const FVector2D MovementVector = Value.Get<FVector2D>();
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
-    const FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-    AddMovementInput(RightVector, MovementVector.X);
-
-    if (Speed <= 100.0f) return;
-    FRotator CarRotation = GetActorRotation();
+    FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
     float RateValue = GetWorld()->GetDeltaSeconds();
-    float RotateBy = MovementVector.X * RateValue * 10.f;
+    float Right = MovementVector.X * RateValue * 0.01f;
 
-    if (bIsCarReverseMoving || FMath::IsNegative(ForwardMovementVector)) {
+    RightMovementValue += Right * 100;
+    AddMovementInput(RightVector, Right);
+    FRotator CarRotation = GetActorRotation();
+    float RotateBy = MovementVector.X * RateValue * 12.f;
+
+    if (bIsCarReverseMoving || FMath::IsNegative(ForwardMovementValue)) {
         RotateBy *= -1.0f;
     }
+
     AddControllerYawInput(RotateBy);
+    CarRotation.Yaw += RotateBy * 2.5f;
+    SetActorRotation(CarRotation);
 
-    //Rotational force of the car
-    CarRotation.Yaw += RotateBy * 2.6f;
-    SetActorRelativeRotation(CarRotation);
+}
 
+void ACar::StopWheel()
+{
+    UE_LOG(LogTemp, Warning, TEXT("STOP"));
+    if (RightMovementValue != 0.0f) {
+        RightMovementValue = 0.0f;
+    }
 }
 
 void ACar::ReverseGear(const FInputActionValue& Value)
 {
-    if (bIsCarHasActiveBrake) return;
+    if (bIsCarHasActiveBrake || !bHasFuel) return;
     if (bIsCarMoving) bIsCarMoving = false;
     if (Speed > 0.0f && !bIsCarReverseMoving) {
-        if (Speed - 20.0f < 0.0f) {
-            Speed = 0.0f;
-            FloatingPawnMovement->MaxSpeed = 0.0f;
-        }
-        else {
-        SlowDownMovement(10.0f);
-        }
-        return;
+        if (Speed - 20.0f < 0.0f) return ResetSpeed();
+           return SlowDownMovement(10.0f);
     }
 
     if (!bIsCarReverseMoving) bIsCarReverseMoving = true;
 
     if (Speed <= 400.0f) {
-        HigherSpeed(20.0f);
+        HigherSpeed(5.0f);
     }
 
     const FVector2D MovementVector = Value.Get<FVector2D>();
@@ -184,7 +168,7 @@ void ACar::ReverseGear(const FInputActionValue& Value)
     const FRotator YawRotator(0.0f, Rotation.Yaw, 0.0f);
     const FVector BackVector = FRotationMatrix(YawRotator).GetUnitAxis(EAxis::X);
     AddMovementInput(BackVector, MovementVector.Y);
-    ForwardMovementVector = MovementVector.Y;
+    ForwardMovementValue = MovementVector.Y;
 
 }
 
@@ -198,12 +182,8 @@ void ACar::HandBrake()
     if (bIsCarMoving) bIsCarMoving = false;
     if (bIsCarReverseMoving) bIsCarReverseMoving = false;
     if (Speed > 0.0f) {
-            if (Speed < 100.0f) {
-                FloatingPawnMovement->MaxSpeed = 0;
-                Speed = 0.0f;
-                return;
-            } 
-            SlowDownMovement(50.0f);
+        if (Speed < 100.0f) return ResetSpeed();
+            SlowDownMovement(5.0f);
     }
 }
 
@@ -212,14 +192,20 @@ void ACar::RelaseHandBrake()
     if (bIsCarHasActiveBrake) bIsCarHasActiveBrake = false;
 }
 
+void ACar::Colision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+{
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("COLISIO"));
+    if (Speed > 0.0f) {
+        ResetSpeed();
+    }
+}
+
 void ACar::Lock(const FInputActionValue& Value)
 {
     const FVector2D MovementVector = Value.Get<FVector2D>();
     FRotator ArmRotation = ThirdPersonSpringArm->GetRelativeRotation();
     ArmRotation.Yaw += MovementVector.X;
     ThirdPersonSpringArm->SetRelativeRotation(ArmRotation);
-    //AddControllerYawInput(MovementVector.X);
-    //AddControllerPitchInput(MovementVector.Y * -1);
 }
 
 
