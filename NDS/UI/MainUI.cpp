@@ -5,7 +5,8 @@ void UMainUI::NativeConstruct()
 {
     Super::NativeConstruct();
     if (AFPSPlayer* PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<AFPSPlayer>()) {
-        PlayerCharacter->EndGameDelegate.AddDynamic(this, &UMainUI::RemovePreviouseWidget);
+        PlayerCharacter->EndGameDelegate.AddDynamic(this, &UMainUI::SetEndGameWidget);
+        PlayerCharacter->MenuDelegate.AddDynamic(this, &UMainUI::RemoveFromScreen);
     }
  
     if (Budget) {
@@ -13,13 +14,18 @@ void UMainUI::NativeConstruct()
     }
 }
 
-void UMainUI::RemovePreviouseWidget()
+void UMainUI::SetEndGameWidget()
 {
     RemoveFromParent();
     if (EndWidgetClass) {
         EndWidget = CreateWidget<UUserWidget>(this, EndWidgetClass);
         EndWidget->AddToViewport();
     }
+}
+
+void UMainUI::RemoveFromScreen()
+{
+    RemoveFromParent();
 }
 
 

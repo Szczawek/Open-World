@@ -33,7 +33,6 @@ ACar::ACar()
     FirstPersonSpringArm->SetupAttachment(CarComponent);
     FrontSpringArm->SetupAttachment(CarComponent);
     FloatingPawnMovement->MaxSpeed = 0.0f;
-
 }
 
 // Called when the game starts or when spawned
@@ -52,7 +51,7 @@ void ACar::BeginPlay()
         CarWidget->AddToViewport();
     }
     if (BoxComponent) {
-        BoxComponent->OnComponentHit.AddDynamic(this, &ACar::Colision);
+        BoxComponent->OnComponentHit.AddDynamic(this, &ACar::Collision);
     }
 }
 
@@ -117,15 +116,17 @@ void ACar::StopMoving()
 
 void ACar::TurnWheel(const FInputActionValue& Value)
 {
-    if (!bIsCarMoving && Speed <= 100.0f || !bIsCarReverseMoving && Speed <= 100.0f) return;
     const FVector2D MovementVector = Value.Get<FVector2D>();
+    float RateValue = GetWorld()->GetDeltaSeconds();
+    float Right = MovementVector.X * RateValue * 0.01f;
+    RightMovementValue += Right * 100;
+
+    if (!bIsCarMoving && Speed <= 10.0f || !bIsCarReverseMoving && Speed <= 10.0f) return;
+
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0.0f, Rotation.Yaw, 0.0f);
     FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-    float RateValue = GetWorld()->GetDeltaSeconds();
-    float Right = MovementVector.X * RateValue * 0.01f;
 
-    RightMovementValue += Right * 100;
     AddMovementInput(RightVector, Right);
     FRotator CarRotation = GetActorRotation();
     float RotateBy = MovementVector.X * RateValue * 12.f;
@@ -142,7 +143,6 @@ void ACar::TurnWheel(const FInputActionValue& Value)
 
 void ACar::StopWheel()
 {
-    UE_LOG(LogTemp, Warning, TEXT("STOP"));
     if (RightMovementValue != 0.0f) {
         RightMovementValue = 0.0f;
     }
@@ -192,12 +192,18 @@ void ACar::RelaseHandBrake()
     if (bIsCarHasActiveBrake) bIsCarHasActiveBrake = false;
 }
 
-void ACar::Colision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ACar::Collision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("COLISIO"));
-    if (Speed > 0.0f) {
-        ResetSpeed();
-    }
+
+    //GROUND COLLISION
+
+    //GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("COLISIO"));
+    //    // Ignore collisions with the ground or with minimal impact
+    //    if (OtherActor->ActorHasTag(FName("Ground"))) return;
+    //   
+    //if (Speed > 0.0f) {
+    //    ResetSpeed();
+    //}
 }
 
 void ACar::Lock(const FInputActionValue& Value)

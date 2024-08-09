@@ -122,7 +122,7 @@ public:
     }
 
     UFUNCTION()
-    void Colision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+    void Collision(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
     /// Car Stats
     UPROPERTY(BlueprintReadWrite, Category = "Stats")

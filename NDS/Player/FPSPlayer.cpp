@@ -41,25 +41,19 @@ void AFPSPlayer::BeginPlay()
 void AFPSPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-    Timmer += DeltaTime;
-    if (!bIsCharacterSprinting && Stamina < 100.0f && Timmer >= 0.4f) {
-        Stamina += 0.1f;
-        Timmer = 0.0f;
-    }
-
-
-
-    if (bIsCharacterSprinting && Timmer > 0.2f) {
-        if (Stamina <= 0.0f)
-        {
-            bIsCharacterSprinting = false;
+    if (bIsCharacterSprinting && Stamina > 0.0f) {
+        Stamina -= DeltaTime * 0.1f;
+        if (Stamina <= 0.0f) {
+            bIsCharacterSprinting = false; 
             SetSpeedLimit(NormalSpeed);
-            return;
         }
-        Timmer = 0.0f;
-        Stamina -= 0.05f;
-   
+     }
+
+    if (!bIsCharacterSprinting && Stamina < 1.0f) {
+        Stamina += DeltaTime * 0.1f;
+
     }
+       
     if (bIsCharacterJumping && CanJump()) {
         bIsCharacterJumping = false;
     }
@@ -82,6 +76,8 @@ void AFPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AFPSPlayer::StopSprinting);
         EnhancedInputComponent->BindAction(SneakingAction, ETriggerEvent::Triggered, this, &AFPSPlayer::Sneaking);
         EnhancedInputComponent->BindAction(SneakingAction, ETriggerEvent::Completed, this, &AFPSPlayer::StopSneaking);
+        EnhancedInputComponent->BindAction(OpenMenuAction, ETriggerEvent::Triggered, this, &AFPSPlayer::OpenMenu);
+
     }
 
 }
@@ -99,7 +95,7 @@ void AFPSPlayer::StopSneaking()
 void AFPSPlayer::Jump()
 {
     if (Stamina <= 0.0f || bIsCharacterJumping) return;
-    Stamina -= 0.2f;
+    Stamina -= 0.05f;
     bIsCharacterJumping = true;
     ACharacter::Jump();
 }
@@ -157,6 +153,7 @@ void AFPSPlayer::SwitchViewMode()
 
 void AFPSPlayer::Sprint()
 {
+    if (Stamina <= 0.0f) return;
     SetSpeedLimit(SprintSpeed);
     bIsCharacterSprinting = true;
 }
@@ -164,6 +161,18 @@ void AFPSPlayer::StopSprinting()
 {
     SetSpeedLimit(NormalSpeed);
     bIsCharacterSprinting = false;
+}
+
+void AFPSPlayer::OpenMenu()
+{
+    if (bMenuIsOpened) return;
+    if (MenuDelegate.IsBound()) {
+        MenuDelegate.Broadcast();
+        if (SettingsWidgetClass) {
+            SettingsWidget = CreateWidget<UUserWidget>(GetWorld(), SettingsWidgetClass);
+            SettingsWidget->AddToViewport();
+        }
+    }
 }
 
 void AFPSPlayer::EndGame() 

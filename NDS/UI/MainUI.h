@@ -29,6 +29,9 @@ public:
     UUserWidget* EndWidget;
 
     UFUNCTION()
-    void RemovePreviouseWidget();
+    void SetEndGameWidget();
+
+    UFUNCTION()
+    void RemoveFromScreen();
 
 };

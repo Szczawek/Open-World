@@ -17,6 +17,9 @@
 UDELEGATE()
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEndGameDelegate);
 
+UDELEGATE()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMenuDelegate);
+
 
 
 UCLASS()
@@ -38,8 +41,12 @@ public:
 
     // Called to bind functionality to input
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
     UPROPERTY()
     FEndGameDelegate EndGameDelegate;
+
+    UPROPERTY()
+    FMenuDelegate MenuDelegate;
 
     UPROPERTY(EditAnywhere, Category = "Mesh")
     USkeletalMeshComponent* MeshComponent;
@@ -67,6 +74,9 @@ public:
     UInputAction* SprintAction;
     UPROPERTY(EditAnyWhere, Category = "Input")
     UInputAction* SneakingAction;
+    UPROPERTY(EditAnywhere, Category = "Input")
+    UInputAction* OpenMenuAction;
+
 
     UPROPERTY()
     APlayerController* Player;
@@ -89,38 +99,44 @@ public:
     void SwitchViewMode();
     void Sprint();
     void StopSprinting();
+
+    UFUNCTION()
+    void OpenMenu();
+
     float NormalSpeed = 600.0f;
     float SprintSpeed = 1000.0f;
     float SneakingSpeed = 400.0f;
-
-
-    float Timmer = 0.0f;
 
     UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
     float Health = 1.0f;
 
     UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
     float Stamina = 1.0f;
-    bool bIsCharacterSprinting = false;
-    bool bIsCharacterJumping = false;
-    float Amo = 30.0f;
-
 
     UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
     float Points = 0.0f;
 
+    bool bIsCharacterSprinting = false;
+    bool bIsCharacterJumping = false;
 
     UPROPERTY(EditAnywhere, Category = "Widget")
     TSubclassOf<UUserWidget> EndWidgetClass;
 
     UPROPERTY()
     UUserWidget* EndWidget;
- 
+
+    UPROPERTY(EditAnywhere, Category = "Widget")
+    TSubclassOf<UUserWidget>  SettingsWidgetClass;
+
+    UPROPERTY()
+    UUserWidget* SettingsWidget;
+
+    bool bMenuIsOpened = false;
+
     void EndGame();
-    
+
     void AddPoint() {
         Points += 1.0f;
     }
-
     void ApplyDemage();
 };
