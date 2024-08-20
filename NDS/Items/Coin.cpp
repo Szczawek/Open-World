@@ -37,13 +37,13 @@ void ACoin::Tick(float DeltaTime)
 void ACoin::OnComponentBeginOverLap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     if (AFPSPlayer* Character = Cast<AFPSPlayer>(OtherActor)) {
-       Character->ApplyDemage();
+       Character->ApplyDemage(0.05f);
        if (WalkInSound) {
              UGameplayStatics::PlaySoundAtLocation(this, WalkInSound, GetActorLocation());
        }
 
        Character->AddPoint();
-       if (Character->Health <= 0.f) {
+       if (Character->Stats.Health <= 0.f) {
            Character->EndGame();
        }
     }

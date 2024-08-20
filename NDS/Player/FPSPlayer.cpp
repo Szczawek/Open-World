@@ -22,7 +22,7 @@ AFPSPlayer::AFPSPlayer()
     FPSCamera->SetupAttachment(MeshComponent);
     SpringArm->SetupAttachment(RootComponent);
     ThirdPersonCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
-    MovementComponent->MaxWalkSpeed = NormalSpeed;
+    MovementComponent->MaxWalkSpeed = SpeedType.Normal;
 }
 
 // Called when the game starts or when spawned
@@ -41,21 +41,21 @@ void AFPSPlayer::BeginPlay()
 void AFPSPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-    if (bIsCharacterSprinting && Stamina > 0.0f) {
-        Stamina -= DeltaTime * 0.1f;
-        if (Stamina <= 0.0f) {
-            bIsCharacterSprinting = false; 
-            SetSpeedLimit(NormalSpeed);
+    if (PlayerStatus.bIsPlayerSprinting && Stats.Stamina > 0.0f) {
+        UpdateStamina(DeltaTime * 0.1f,"reduce");
+        if (Stats.Stamina <= 0.0f) {
+            PlayerStatus.bIsPlayerSprinting = false; 
+            SetSpeedLimit(SpeedType.Normal);
         }
      }
 
-    if (!bIsCharacterSprinting && Stamina < 1.0f) {
-        Stamina += DeltaTime * 0.1f;
+    if (!PlayerStatus.bIsPlayerSprinting && Stats.Stamina < 1.0f) {
+        UpdateStamina(DeltaTime * 0.1f,"add");
 
     }
        
-    if (bIsCharacterJumping && CanJump()) {
-        bIsCharacterJumping = false;
+    if (PlayerStatus.bIsPlayerJumping && CanJump()) {
+        PlayerStatus.bIsPlayerJumping = false;
     }
 }
 
@@ -84,19 +84,19 @@ void AFPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void AFPSPlayer::Sneaking()
 {
-    SetSpeedLimit(SneakingSpeed);
+    SetSpeedLimit(SpeedType.Sneak);
 }
 
 void AFPSPlayer::StopSneaking()
 {
-    SetSpeedLimit(NormalSpeed);
+    SetSpeedLimit(SpeedType.Normal);
 }
 
 void AFPSPlayer::Jump()
 {
-    if (Stamina <= 0.0f || bIsCharacterJumping) return;
-    Stamina -= 0.05f;
-    bIsCharacterJumping = true;
+    if (Stats.Stamina <= 0.0f || PlayerStatus.bIsPlayerJumping) return;
+    UpdateStamina(0.05f,"reduce");
+    PlayerStatus.bIsPlayerJumping = true;
     ACharacter::Jump();
 }
 
@@ -119,9 +119,9 @@ void AFPSPlayer::Move(const FInputActionValue& Value)
 
 void AFPSPlayer::StopMoving()
 {
-    if (bIsCharacterSprinting) {
-        bIsCharacterSprinting = false;
-        SetSpeedLimit(NormalSpeed);
+    if (PlayerStatus.bIsPlayerSprinting) {
+        PlayerStatus.bIsPlayerSprinting = false;
+        SetSpeedLimit(SpeedType.Normal);
     }
 }
 
@@ -153,14 +153,14 @@ void AFPSPlayer::SwitchViewMode()
 
 void AFPSPlayer::Sprint()
 {
-    if (Stamina <= 0.0f) return;
-    SetSpeedLimit(SprintSpeed);
-    bIsCharacterSprinting = true;
+    if (Stats.Stamina <= 0.0f) return;
+    SetSpeedLimit(SpeedType.Sprint);
+    PlayerStatus.bIsPlayerSprinting = true;
 }
 void AFPSPlayer::StopSprinting() 
 {
-    SetSpeedLimit(NormalSpeed);
-    bIsCharacterSprinting = false;
+    SetSpeedLimit(SpeedType.Normal);
+    PlayerStatus.bIsPlayerSprinting = false;
 }
 
 void AFPSPlayer::OpenMenu()
@@ -196,9 +196,3 @@ void AFPSPlayer::EndGame()
        }
      }
 }
-
-void AFPSPlayer::ApplyDemage()
-{
-    Health -= 0.1f;
-}
-

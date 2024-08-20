@@ -12,6 +12,7 @@
 #include <InputMappingContext.h>
 #include <InputAction.h>
 #include "Blueprint/UserWidget.h"
+#include "../Player/PlayerSettings.h"
 #include "FPSPlayer.generated.h"
 
 UDELEGATE()
@@ -19,8 +20,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEndGameDelegate);
 
 UDELEGATE()
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMenuDelegate);
-
-
 
 UCLASS()
 class NDS_API AFPSPlayer : public ACharacter
@@ -34,6 +33,11 @@ public:
 protected:
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
+
+public: 
+    FPlayerStatus PlayerStatus;
+    FMovementSpeed SpeedType;
+    FCharacterStats Stats;
 
 public:
     // Called every frame
@@ -84,9 +88,6 @@ public:
     UPROPERTY() 
     UCharacterMovementComponent* MovementComponent;
 
-    void SetSpeedLimit(const float Value) {
-        MovementComponent->MaxWalkSpeed = Value;
-    };
 
     void Sneaking();
     void StopSneaking();
@@ -102,20 +103,7 @@ public:
 
     UFUNCTION()
     void OpenMenu();
-
-    float NormalSpeed = 600.0f;
-    float SprintSpeed = 1000.0f;
-    float SneakingSpeed = 400.0f;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
-    float Health = 1.0f;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
-    float Stamina = 1.0f;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Character Stats")
-    float Points = 0.0f;
-
+   
     bool bIsCharacterSprinting = false;
     bool bIsCharacterJumping = false;
 
@@ -135,8 +123,29 @@ public:
 
     void EndGame();
 
-    void AddPoint() {
-        Points += 1.0f;
+    UFUNCTION()
+    void SetSpeedLimit(const float Value) {
+        MovementComponent->MaxWalkSpeed = Value;
+    };
+
+    UFUNCTION()
+    void UpdateStamina(const float Value, const FString& Type) {
+        if (Value == 0.f || Type.IsEmpty()) return;
+        if (Type == TEXT("add")) {
+            Stats.Stamina += Value;
+        }
+        if (Type == TEXT("reduce")) {
+            Stats.Stamina -= Value;
+        }
     }
-    void ApplyDemage();
+
+    UFUNCTION()
+    void AddPoint(const int32 Value = 1) {
+        Stats.Points += Value;
+    }
+
+    UFUNCTION()
+    void ApplyDemage(const float Value) {
+        Stats.Health -= Value;
+    };
 };
