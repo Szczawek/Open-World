@@ -56,9 +56,20 @@ public:
     USkeletalMeshComponent* MeshComponent;
     UPROPERTY(EditAnywhere, Category = "Camera")
     UCameraComponent* ThirdPersonCamera;
-    UPROPERTY(EditAnywhere, Category = "Camera");
-    UCameraComponent* FPSCamera;
-    UPROPERTY(EditAnywhere)
+
+    UPROPERTY(EditDefaultsOnly, Category = "Camera")
+    UCameraComponent* FirstPersonCamera;
+
+    UPROPERTY(EditAnywhere, Category = "Camera")
+    UCameraComponent* BackwardCamera;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Rack") 
+    USpringArmComponent* FirstPersonArm;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Rack")
+    USpringArmComponent* BackwardSpringArm;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Rack")
     USpringArmComponent* SpringArm;
 
 

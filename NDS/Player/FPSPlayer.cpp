@@ -16,12 +16,48 @@ AFPSPlayer::AFPSPlayer()
 
     Player = UGameplayStatics::GetPlayerController(GetWorld(), 0);;
     MovementComponent = GetCharacterMovement();
-    ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Third Person Camera"));
-    FPSCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPS Camera"));
+
+    // Cameras
     SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-    FPSCamera->SetupAttachment(MeshComponent);
-    SpringArm->SetupAttachment(RootComponent);
+    ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Third Person Camera"));
     ThirdPersonCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+    SpringArm->SetupAttachment(RootComponent);
+    FirstPersonArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("First Person RACK"));
+    FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPS Camera"));    
+    FirstPersonCamera->SetupAttachment(FirstPersonArm,USpringArmComponent::SocketName);
+    FirstPersonArm->SetupAttachment(RootComponent);
+
+    BackwardCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Backward Camera"));
+    BackwardSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Backward Rack"));
+    BackwardCamera->SetupAttachment(BackwardSpringArm, USpringArmComponent::SocketName);
+    BackwardSpringArm->SetupAttachment(RootComponent);
+
+    BackwardSpringArm->bUsePawnControlRotation = true;
+    SpringArm->bUsePawnControlRotation = true;
+    FirstPersonArm->bUsePawnControlRotation = true;
+    FirstPersonArm->bAutoActivate = false;
+    BackwardSpringArm->bAutoActivate = false;
+    BackwardCamera->bAutoActivate = false;
+    FirstPersonCamera->bAutoActivate = false;
+    ThirdPersonCamera->bAutoActivate = true;
+    SpringArm->bAutoActivate = true;
+
+    FirstPersonArm->TargetArmLength = 50.f;
+    SpringArm->TargetArmLength = 200.f;
+    BackwardSpringArm->TargetArmLength = 200.f;
+
+
+    FVector SpringArmPlace(0.0f, 0.0f, 50.0f);;
+    SpringArm->SetRelativeLocation(SpringArmPlace);
+    FRotator BackWardRotation(0.0f, 180.0f, 0.0f);
+    BackwardSpringArm->SetRelativeLocation(SpringArmPlace);
+    BackwardSpringArm->SetRelativeRotation(BackWardRotation);
+    FVector BackwardCameraPlace(320.0f, 0.0f, 80.0f);
+    FRotator BackwardCameraRotation(-20.0f, -180.0f, 0.0f);
+    BackwardCamera->SetRelativeLocation(BackwardCameraPlace);
+    BackwardCamera->SetRelativeRotation(BackwardCameraRotation);
+
+    // Movement
     MovementComponent->MaxWalkSpeed = SpeedType.Normal;
 }
 
@@ -140,14 +176,21 @@ void AFPSPlayer::Fire()
 void AFPSPlayer::SwitchViewMode()
 {
     if (ThirdPersonCamera->IsActive()) {
-        FPSCamera->SetActive(true);
+        SpringArm->SetActive(false);
+        FirstPersonArm->SetActive(true);
+        FirstPersonCamera->SetActive(true);
         ThirdPersonCamera->SetActive(false);
-    } else {
-        FPSCamera->SetActive(false);
+    } else if(FirstPersonCamera->IsActive()) {
+        FirstPersonCamera->SetActive(false);
+        FirstPersonArm->SetActive(false);
+        BackwardSpringArm->SetActive(true);
+        BackwardCamera->SetActive(true);
+    }
+    else {
+        BackwardSpringArm->SetActive(false);
+        BackwardCamera->SetActive(false);
+        SpringArm->SetActive(true);
         ThirdPersonCamera->SetActive(true);
-        FRotator CameraRotation = Player->GetControlRotation();
-        CameraRotation.Pitch = 0.0f;
-        Player->SetControlRotation(CameraRotation);
     }
 }
 
@@ -191,7 +234,7 @@ void AFPSPlayer::EndGame()
         Player->FlushPressedKeys();
         Player->SetInputMode(InputMode);
        if (!ThirdPersonCamera->IsActive()) {
-            FPSCamera->SetActive(false);
+            FirstPersonCamera->SetActive(false);
             ThirdPersonCamera->SetActive(true);
        }
      }
