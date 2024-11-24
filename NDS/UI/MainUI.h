@@ -6,6 +6,7 @@
 #include <Components/Image.h>
 #include <Components/Button.h>
 #include "../Player/FPSPlayer.h"
+#include "Components/ProgressBar.h"
 #include "MainUI.generated.h"
 
 
@@ -34,4 +35,15 @@ public:
     UFUNCTION()
     void RemoveFromScreen();
 
+    UFUNCTION()
+    void UpdateStats(float Value,FString Type);
+
+    UPROPERTY(meta = (BindWidget))
+    UProgressBar* HealthBar;
+
+    UPROPERTY(meta = (BindWidget))
+    UProgressBar* StaminaBar;
+
+   /* UPROPERTY(meta = (BindWidget))
+    UTextBlock* CoinAmount;*/
 };

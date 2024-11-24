@@ -21,6 +21,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FEndGameDelegate);
 UDELEGATE()
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMenuDelegate);
 
+UDELEGATE()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStatsDelegate, float, Value, FString, Type);
+
 UCLASS()
 class NDS_API AFPSPlayer : public ACharacter
 {
@@ -48,9 +51,10 @@ public:
 
     UPROPERTY()
     FEndGameDelegate EndGameDelegate;
-
     UPROPERTY()
     FMenuDelegate MenuDelegate;
+    UPROPERTY()
+    FStatsDelegate StatsDelegate;
 
     UPROPERTY(EditAnywhere, Category = "Mesh")
     USkeletalMeshComponent* MeshComponent;
@@ -142,12 +146,17 @@ public:
     UFUNCTION()
     void UpdateStamina(const float Value, const FString& Type) {
         if (Value == 0.f || Type.IsEmpty()) return;
+        float UpdatedStamina = Stats.Stamina;   
         if (Type == TEXT("add")) {
-            Stats.Stamina += Value;
+            UpdatedStamina += Value;
         }
         if (Type == TEXT("reduce")) {
-            Stats.Stamina -= Value;
+            UpdatedStamina -= Value;
         }
+        if (StatsDelegate.IsBound()) {
+            StatsDelegate.Broadcast(UpdatedStamina, "Stamina");
+        }
+        Stats.Stamina = UpdatedStamina;
     }
 
     UFUNCTION()
@@ -157,6 +166,10 @@ public:
 
     UFUNCTION()
     void ApplyDemage(const float Value) {
-        Stats.Health -= Value;
+        float UpdatedHealth = Stats.Health -= Value;
+        Stats.Health = UpdatedHealth;;
+        if (StatsDelegate.IsBound()) {
+            StatsDelegate.Broadcast(UpdatedHealth,"Health");
+        }
     };
 };

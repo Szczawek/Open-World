@@ -7,11 +7,15 @@ void UMainUI::NativeConstruct()
     if (AFPSPlayer* PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<AFPSPlayer>()) {
         PlayerCharacter->EndGameDelegate.AddDynamic(this, &UMainUI::SetEndGameWidget);
         PlayerCharacter->MenuDelegate.AddDynamic(this, &UMainUI::RemoveFromScreen);
+        PlayerCharacter->StatsDelegate.AddDynamic(this, &UMainUI::UpdateStats);
     }
- 
-    if (Budget) {
-        Budget->SetText(FText::FromString(TEXT("Budget")));
+    if (HealthBar) {
+        HealthBar->SetPercent(100.0f);
     }
+    if (StaminaBar) {
+        StaminaBar->SetPercent(100.0f);
+    }
+
 }
 
 void UMainUI::SetEndGameWidget()
@@ -26,6 +30,22 @@ void UMainUI::SetEndGameWidget()
 void UMainUI::RemoveFromScreen()
 {
     RemoveFromParent();
+}
+
+void UMainUI::UpdateStats(float Value,FString Type)
+{
+  
+ 
+    if (Type == TEXT("Health")) {
+        HealthBar->SetPercent(Value);
+    }
+    if (Type == TEXT("Stamina")) {
+        StaminaBar->SetPercent(Value);
+    }
+    if (Type == TEXT("Coin")) {
+     
+    }
+    
 }
 
 

@@ -34,9 +34,12 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Status")
     bool bIsPlayerJumping = false;
 
-
     UPROPERTY(BlueprintReadWrite, Category = "Status")
     bool bIsPlayerClimbing = false;
+
+    UPROPERTY(VisibleAnywhere, Category = "Status")
+    bool bIsPlayerSneaking = false;
+
 };
 
 USTRUCT(BlueprintType)

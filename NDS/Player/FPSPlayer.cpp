@@ -108,7 +108,7 @@ void AFPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
         EnhancedInputComponent->BindAction(LockAction, ETriggerEvent::Triggered, this, &AFPSPlayer::Lock);
         EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &AFPSPlayer::Fire);
         EnhancedInputComponent->BindAction(SwitchViewModeAction, ETriggerEvent::Triggered, this, &AFPSPlayer::SwitchViewMode);
-        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &AFPSPlayer::Sprint);
+        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AFPSPlayer::Sprint);
         EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AFPSPlayer::StopSprinting);
         EnhancedInputComponent->BindAction(SneakingAction, ETriggerEvent::Triggered, this, &AFPSPlayer::Sneaking);
         EnhancedInputComponent->BindAction(SneakingAction, ETriggerEvent::Completed, this, &AFPSPlayer::StopSneaking);
@@ -120,24 +120,28 @@ void AFPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void AFPSPlayer::Sneaking()
 {
+    PlayerStatus.bIsPlayerSneaking = true;
     SetSpeedLimit(SpeedType.Sneak);
 }
 
 void AFPSPlayer::StopSneaking()
-{
+{   
+    PlayerStatus.bIsPlayerSneaking = false;
+    if (PlayerStatus.bIsPlayerSprinting && Stats.Stamina >= 0.1f) return SetSpeedLimit(SpeedType.Sprint);
     SetSpeedLimit(SpeedType.Normal);
 }
 
 void AFPSPlayer::Jump()
 {
-    if (Stats.Stamina <= 0.0f || PlayerStatus.bIsPlayerJumping) return;
-    UpdateStamina(0.05f,"reduce");
+    if (Stats.Stamina <= 0.1f || PlayerStatus.bIsPlayerJumping) return;
+    UpdateStamina(0.08f,"reduce");
     PlayerStatus.bIsPlayerJumping = true;
     ACharacter::Jump();
 }
 
 void AFPSPlayer::StopJumping()
 {
+    PlayerStatus.bIsPlayerJumping = false;
     ACharacter::StopJumping();
 }
 
@@ -196,14 +200,16 @@ void AFPSPlayer::SwitchViewMode()
 
 void AFPSPlayer::Sprint()
 {
-    if (Stats.Stamina <= 0.0f) return;
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Black, TEXT("TR"));
+    if (Stats.Stamina <= 0.0f || PlayerStatus.bIsPlayerJumping || PlayerStatus.bIsPlayerSneaking ) return;
     SetSpeedLimit(SpeedType.Sprint);
     PlayerStatus.bIsPlayerSprinting = true;
 }
 void AFPSPlayer::StopSprinting() 
 {
-    SetSpeedLimit(SpeedType.Normal);
     PlayerStatus.bIsPlayerSprinting = false;
+    if (PlayerStatus.bIsPlayerSneaking) return;
+    SetSpeedLimit(SpeedType.Normal);
 }
 
 void AFPSPlayer::OpenMenu()
