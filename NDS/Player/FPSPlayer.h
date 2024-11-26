@@ -22,6 +22,12 @@ UDELEGATE()
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMenuDelegate);
 
 UDELEGATE()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOpenMainWidgetDelegate);
+
+UDELEGATE()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOpenMenuDelegate);
+
+UDELEGATE()
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FStatsDelegate, float, Value, FString, Type);
 
 UCLASS()
@@ -55,6 +61,11 @@ public:
     FMenuDelegate MenuDelegate;
     UPROPERTY()
     FStatsDelegate StatsDelegate;
+    UPROPERTY()
+    FOpenMainWidgetDelegate OpenMainWidgetDelegate;
+
+    UPROPERTY()
+    FOpenMenuDelegate OpenMenuDelegate;
 
     UPROPERTY(EditAnywhere, Category = "Mesh")
     USkeletalMeshComponent* MeshComponent;
@@ -127,14 +138,26 @@ public:
 
     UPROPERTY()
     UUserWidget* EndWidget;
-
-    UPROPERTY(EditAnywhere, Category = "Widget")
-    TSubclassOf<UUserWidget>  SettingsWidgetClass;
+    
+    UPROPERTY(EditAnywhere, Category = "User Interface")
+    TSubclassOf<UUserWidget> UserInterfaceClass;
 
     UPROPERTY()
-    UUserWidget* SettingsWidget;
+    UUserWidget* UserInterface;
+
+        //UPROPERTY(EditAnywhere, Category = "Widget")
+        //TSubclassOf<UUserWidget>  SettingsWidgetClass;
+
+       /* UPROPERTY()
+        UUserWidget* SettingsWidget;*/
 
     bool bMenuIsOpened = false;
+
+    UFUNCTION()
+    void TakeWeapon();
+
+    //UPROPERTY()
+    //AWeapon* EquipedWeapon;
 
     void EndGame();
 
@@ -160,8 +183,20 @@ public:
     }
 
     UFUNCTION()
+    void PlayerHoldWeapon() {
+        PlayerStatus.bIsPLayerHoldsWeapon = true;
+    }
+
+    UFUNCTION()
     void AddPoint(const int32 Value = 1) {
-        Stats.Points += Value;
+        int32 UpdatedBudget = Stats.Points += Value;
+
+        if (StatsDelegate.IsBound()) {
+        
+            StatsDelegate.Broadcast(UpdatedBudget, "Coin");
+
+        }
+        Stats.Points = UpdatedBudget;
     }
 
     UFUNCTION()

@@ -38,7 +38,13 @@ public:
     bool bIsPlayerClimbing = false;
 
     UPROPERTY(VisibleAnywhere, Category = "Status")
-    bool bIsPlayerSneaking = false;
+    bool bIsPlayerSneaking = false; 
+
+    UPROPERTY(BlueprintReadWrite, Category = "Status")
+    bool bIsPlayerDead = false;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    bool bIsPLayerHoldsWeapon = false;
 
 };
 

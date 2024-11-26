@@ -6,14 +6,22 @@
 void USettingsUI::NativeConstruct()
 {
     Super::NativeConstruct();
+    if (MenuWidgetClass) {
+        MenuWidget = CreateWidget<UUserWidget>(this, MenuWidgetClass);
+    }
+
+    if (AFPSPlayer* PlayerCharacter = GetWorld()->GetFirstPlayerController()->GetPawn<AFPSPlayer>()) {
+        PlayerCharacter->OpenMenuDelegate.AddDynamic(this, &USettingsUI::OpenMenu);
+    }
 }
 
 void USettingsUI::OpenMenu()
 {
-    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("1"));
+
+    
 }
 
 void USettingsUI::CloseMenu()
 {
-
+    RemoveFromParent();
 }

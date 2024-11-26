@@ -8,36 +8,41 @@ AWeapon::AWeapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-    WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon Mesh"));
-    WeaponMesh->SetupAttachment(RootComponent);
-   
-
+    Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon Mesh"));
+    SphereCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere collision"));
+    RootComponent = SphereCollision;
+    SphereCollision->SetSphereRadius(50.0f);
+    Mesh->SetupAttachment(SphereCollision);
+    Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
+    SphereCollision->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnCharacterOverlap);
 }
 
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+    if (!bIsWeaponTaken) {
+        FRotator Rotation = this->GetActorRotation();
+        Rotation.Yaw += DeltaTime * 40.0f;
+        SetActorRotation(Rotation);
+    }
+
 }
 
-void AWeapon::FireBullet()
+void AWeapon::OnCharacterOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    UE_LOG(LogTemp, Warning, TEXT("SHOT"));
-    if (BulletClass) {
-    UE_LOG(LogTemp, Warning, TEXT("SHOT"));
-    FVector SpawnLocation =  GetActorLocation(); // Example spawn location
-    FRotator SpawnRotation = FRotator::ZeroRotator;
-
-    FActorSpawnParameters SpawnParams;
-    GetWorld()->SpawnActor<AActor>(BulletClass, SpawnLocation, SpawnRotation, SpawnParams);
-
+    if (AFPSPlayer* PlayerCharacter = Cast<AFPSPlayer>(OtherActor)) {
+        PlayerCharacter->PlayerHoldWeapon();
+        FName HandSocketName = TEXT("hand_l"); 
+        AttachToComponent(PlayerCharacter->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocketName);
+        SphereCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        bIsWeaponTaken = true;
     }
 }
 

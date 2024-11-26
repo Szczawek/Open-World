@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "../Player/FPSPlayer.h"
 #include "SettingsUI.generated.h"
 
 /**
@@ -20,4 +21,13 @@ private:
 public: 
     void OpenMenu();
     void CloseMenu();
+
+
+
+    UPROPERTY()
+    UUserWidget* MenuWidget;
+
+    UPROPERTY()
+    TSubclassOf<UUserWidget> MenuWidgetClass;
+
 };

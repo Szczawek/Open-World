@@ -175,6 +175,8 @@ void AFPSPlayer::Lock(const FInputActionValue& Value)
 
 void AFPSPlayer::Fire()
 {
+    if (!PlayerStatus.bIsPLayerHoldsWeapon) return;
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("YES"));    
 }
 
 void AFPSPlayer::SwitchViewMode()
@@ -200,10 +202,9 @@ void AFPSPlayer::SwitchViewMode()
 
 void AFPSPlayer::Sprint()
 {
-    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Black, TEXT("TR"));
+    PlayerStatus.bIsPlayerSprinting = true;
     if (Stats.Stamina <= 0.0f || PlayerStatus.bIsPlayerJumping || PlayerStatus.bIsPlayerSneaking ) return;
     SetSpeedLimit(SpeedType.Sprint);
-    PlayerStatus.bIsPlayerSprinting = true;
 }
 void AFPSPlayer::StopSprinting() 
 {
@@ -217,17 +218,27 @@ void AFPSPlayer::OpenMenu()
     if (bMenuIsOpened) return;
     if (MenuDelegate.IsBound()) {
         MenuDelegate.Broadcast();
-        if (SettingsWidgetClass) {
+
+        if (OpenMenuDelegate.IsBound()) {
+            OpenMenuDelegate.Broadcast();
+        }
+        /*if (SettingsWidgetClass) {
             SettingsWidget = CreateWidget<UUserWidget>(GetWorld(), SettingsWidgetClass);
             SettingsWidget->AddToViewport();
-        }
+        }*/
     }
 }
 
-void AFPSPlayer::EndGame() 
+void AFPSPlayer::TakeWeapon()
+{
+    
+}
+
+void AFPSPlayer::EndGame()
 {
 
     if (Player) {
+        PlayerStatus.bIsPlayerDead = true;
         if (EndGameDelegate.IsBound()) {
             EndGameDelegate.Broadcast();
         }

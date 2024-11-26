@@ -11,10 +11,10 @@ ACoin::ACoin()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-    Ball = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
+    Coin = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh Component"));
     CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Component"));
     RootComponent = CollisionSphere;
-    Ball->SetupAttachment(CollisionSphere);
+    Coin->SetupAttachment(CollisionSphere);
 
 
 }
@@ -31,22 +31,25 @@ void ACoin::BeginPlay()
 void ACoin::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+    if (bCoinIsColected) {
+        if (Delta >= 3.0f) Destroy();
+        FVector CurrentLocation = GetTargetLocation();
+        CurrentLocation.Z += DeltaTime * 50.0f;
+        this->SetActorLocation(CurrentLocation);
+        Delta += DeltaTime;
+
+    }
 
 }
 
 void ACoin::OnComponentBeginOverLap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     if (AFPSPlayer* Character = Cast<AFPSPlayer>(OtherActor)) {
-       Character->ApplyDemage(0.05f);
        if (WalkInSound) {
              UGameplayStatics::PlaySoundAtLocation(this, WalkInSound, GetActorLocation());
        }
-
        Character->AddPoint();
-       if (Character->Stats.Health <= 0.f) {
-           Character->EndGame();
-       }
     }
-    Destroy();
+    bCoinIsColected = true;
 }
 

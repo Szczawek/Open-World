@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include <Components/SphereComponent.h>
+#include "../Player/FPSPlayer.h"
 #include "Weapon.generated.h"
 
 UCLASS()
@@ -23,14 +25,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+    UPROPERTY()
+    bool bIsWeaponTaken = false;
+
     UPROPERTY(EditAnyWhere, Category = "Mesh");
-    UStaticMeshComponent* WeaponMesh;
+    UStaticMeshComponent* Mesh;
 
-
-    float Amo = 30.0f;
-
-    UPROPERTY(EditAnywhere, Category = "Bullet")
-    TSubclassOf<AActor> BulletClass;
-
-    void FireBullet();
+    UPROPERTY(EditAnywhere, Category = "Sphere Collision")
+    USphereComponent* SphereCollision;
+    
+    UFUNCTION()
+    void OnCharacterOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

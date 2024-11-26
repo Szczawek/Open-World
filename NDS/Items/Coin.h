@@ -14,20 +14,21 @@ class NDS_API ACoin : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ACoin();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+    virtual void Tick(float DeltaTime) override;
 
-    UPROPERTY(EditAnywhere, Category = "Static Mesh")
-    UStaticMeshComponent* Ball;
-    UPROPERTY(EditAnywhere, Category="Ball Sphere")
+    bool bCoinIsColected = false;
+    float Delta = 0.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Mesh")
+    UStaticMeshComponent* Coin;
+
+    UPROPERTY(EditAnywhere, Category="Sphere Collision")
     USphereComponent* CollisionSphere;
 
     UPROPERTY(EditAnywhere, Category = "Sound Effect")
